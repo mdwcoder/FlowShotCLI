@@ -1,9 +1,18 @@
 import typer
+import os
+import shutil
 import subprocess
 from rich import print
 from rich.prompt import Confirm
 from flowshot.core.storage import Storage
 from flowshot.core.validator import Validator
+
+
+def _shell_executable() -> str | None:
+    if os.name == "nt":
+        return os.environ.get("COMSPEC") or shutil.which("cmd")
+    return os.environ.get("SHELL") or shutil.which("bash") or shutil.which("sh")
+
 
 def play(
     start_index: int = typer.Option(0, help="Start from specific index"),
@@ -57,8 +66,7 @@ def play(
             try:
                 print(f"[dim]Running...[/dim]")
                 # Use shell=True to support pipes/redirects captured in history
-                subprocess.run(cmd, shell=True, check=True, executable="/bin/bash") 
-                # Note: Assuming bash/sh compatible syntax. History usually is.
+                subprocess.run(cmd, shell=True, check=True, executable=_shell_executable())
             except subprocess.CalledProcessError as e:
                 print(f"[red]Command failed with exit code {e.returncode}[/red]")
                 if not Confirm.ask("Continue execution?", default=False):
